@@ -1,0 +1,9 @@
+# node modules
+node_modules
+
+# env files
+.env
+.env.test
+
+# pnpm-lock
+pnpm-lock.yaml
