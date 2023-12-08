@@ -1,0 +1,82 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User          : Profile      1:1
+// AuthorProfile : Article      1:N
+// AuthorProfile : Comment      1:N
+// Article : Comment            1:N
+// Article : Tags               N:M
+model User{
+  id Int @id @default(autoincrement())
+  userName String @unique
+  email String @unique
+  hash String
+
+  token String
+
+  profile AuthorProfile?
+  @@map("users")
+}
+
+model AuthorProfile{
+  id Int @id @default(autoincrement())
+
+  user User @relation(fields: [userName], references: [userName])
+  userName String @unique
+
+  bio String?
+  image String?
+  following Boolean?
+
+  article Article[]
+  comments Comment[]
+  @@map("profiles")
+}
+
+model Article{
+  id Int  @id @default(autoincrement())
+  title String
+  description String
+  body String
+  tagList Tag[]
+
+  comments Comment[]
+  createdAt DateTime @default(now())
+  UpdatedAt DateTime @updatedAt
+  favourited Boolean
+  favouritesCount Int
+
+  authorId String
+  author AuthorProfile @relation(fields: [authorId], references: [userName])
+  @@map("articles")
+}
+
+model Tag{
+  id Int  @id @default(autoincrement())
+  tag String
+  articles Article[]
+  @@map("tags")
+}
+
+model Comment{
+  id Int  @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  UpdatedAt DateTime @updatedAt
+  body String
+
+  articleId Int
+  article Article @relation(fields:[articleId], references:[id])
+
+  authorId String
+  author AuthorProfile @relation(fields: [authorId], references: [userName])
+  @@map("comments")
+}
