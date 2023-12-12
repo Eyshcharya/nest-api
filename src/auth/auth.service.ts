@@ -22,13 +22,15 @@ export class AuthService {
     const secret = this.config.get('JWT_SECRET');
 
     const token = await this.jwt.signAsync(payload, {
-      expiresIn: '50m',
+      expiresIn: '250m',
       secret: secret,
     });
-    return { user: { email, token: token, userName, bio, image } };
+
+    const jwt = `bearer ${token}`;
+    return { user: { email, token: jwt, userName, bio, image } };
   }
 
-  // REGISTER
+  //* REGISTER
   async register(dto: RegisterDto) {
     // generate pw
     const hash = await argon.hash(dto.password);
@@ -39,6 +41,7 @@ export class AuthService {
           email: dto.email,
           password: hash,
           userName: dto.userName,
+          following: { create: {} },
         },
       });
 
@@ -55,7 +58,7 @@ export class AuthService {
     }
   }
 
-  // LOGIN
+  //* LOGIN
   async login(dto: LoginDto) {
     // find the user by email
     const user = await this.prisma.user.findUnique({
