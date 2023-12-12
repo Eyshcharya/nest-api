@@ -95,7 +95,7 @@ export class ArticleService {
     limit?: string,
     offset?: string,
   ) {
-    const { id } = await this.prisma.user.findUnique({
+    const { id } = await this.prisma.user.findFirst({
       where: { userName: favorited },
       select: { id: true },
     });
