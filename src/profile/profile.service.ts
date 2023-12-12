@@ -51,7 +51,7 @@ export class ProfileService {
   }
 
   // FOLLOW USER
-  async checkUser(userId: number, targetedUserName: string) {
+  async followUser(userId: number, targetedUserName: string) {
     // get targetProfile
     const targetedProfile = await this.prisma.user.findFirst({
       where: {

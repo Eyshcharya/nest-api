@@ -3,7 +3,6 @@ import {
   Delete,
   Get,
   Param,
-  ParseIntPipe,
   Post,
   UseGuards,
 } from '@nestjs/common';
