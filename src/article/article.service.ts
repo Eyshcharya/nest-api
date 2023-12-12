@@ -76,7 +76,7 @@ export class ArticleService {
       }
 
       // return created article
-      const { id, authorId, ...rest } = article;
+      const { id, authorId, favoritedBy, ...rest } = article;
       return { article: rest };
     } catch (error) {
       // if tag already exists
@@ -95,12 +95,20 @@ export class ArticleService {
     limit?: string,
     offset?: string,
   ) {
+    const { id } = await this.prisma.user.findUnique({
+      where: { userName: favorited },
+      select: { id: true },
+    });
+
     const where = {};
     if (tag) {
       where['tagList'] = { some: { tag: tag } };
     }
     if (authorName) {
       where['author'] = { userName: authorName };
+    }
+    if (favorited) {
+      where['favoritedBy'] = { has: id };
     }
     const articles = await this.prisma.article.findMany({
       skip: offset ? parseInt(offset) : undefined,
@@ -120,7 +128,9 @@ export class ArticleService {
         },
       },
     });
-    return articles.map(({ id, authorId, ...rest }) => ({ article: rest }));
+    return articles.map(({ id, authorId, favoritedBy, ...rest }) => ({
+      article: rest,
+    }));
   }
 
   // * Get User Feed Articles
@@ -147,15 +157,17 @@ export class ArticleService {
       });
 
       if (articles) {
-        return articles.map(({ id, authorId, author, ...rest }) => ({
-          article: {
-            ...rest,
-            author: {
-              ...author,
-              following: true,
+        return articles.map(
+          ({ id, authorId, author, favoritedBy, ...rest }) => ({
+            article: {
+              ...rest,
+              author: {
+                ...author,
+                following: true,
+              },
             },
-          },
-        }));
+          }),
+        );
       } else {
         return { message: 'No feed articles!' };
       }
@@ -184,7 +196,7 @@ export class ArticleService {
       throw new NotFoundException('Resource Not Found');
     } else {
       // return article
-      const { id, authorId, ...rest } = article;
+      const { id, authorId, favoritedBy, ...rest } = article;
       return { article: rest };
     }
   }
@@ -216,7 +228,7 @@ export class ArticleService {
       });
       if (updateArticle) {
         // return updated article
-        const { id, authorId, ...rest } = updateArticle;
+        const { id, authorId, favoritedBy, ...rest } = updateArticle;
         return { article: rest };
       } else {
         throw new UnprocessableEntityException(`Failed to update the article`);
@@ -250,7 +262,7 @@ export class ArticleService {
       if (!deletedArticle) {
         throw new UnprocessableEntityException(`Failed to delete the article`);
       } else {
-        const { id, authorId, ...rest } = deletedArticle;
+        const { id, authorId, favoritedBy, ...rest } = deletedArticle;
         return { article: rest };
       }
     } else {
@@ -303,7 +315,7 @@ export class ArticleService {
     });
     const following = isFollowing ? true : false;
 
-    const { id, authorId, author, ...rest } = article;
+    const { id, authorId, author, favoritedBy, ...rest } = article;
     return {
       article: {
         ...rest,
@@ -345,7 +357,14 @@ export class ArticleService {
           favoriteArticles: { push: id },
         },
       });
-      if (favoritedArticle) {
+
+      const favoritedBy = await this.prisma.article.update({
+        where: { id },
+        data: {
+          favoritedBy: { push: userId },
+        },
+      });
+      if (favoritedArticle && favoritedBy) {
         const count = 1;
         return this.returnArticle(slug, favorited, count, userId);
       }
@@ -360,9 +379,9 @@ export class ArticleService {
   // * unfavorite Article
   async unfavArticle(userId: number, slug: string) {
     // fetch articleId
-    const { id } = await this.prisma.article.findFirst({
+    const { id, favoritedBy } = await this.prisma.article.findFirst({
       where: { slug },
-      select: { id: true },
+      select: { id: true, favoritedBy: true },
     });
 
     // check if article is favorited by user
@@ -388,7 +407,16 @@ export class ArticleService {
           },
         },
       });
-      if (favoritedArticle) {
+
+      const unfavoritedBy = await this.prisma.article.update({
+        where: { id },
+        data: {
+          favoritedBy: {
+            set: favoritedBy.filter((id) => id !== userId),
+          },
+        },
+      });
+      if (favoritedArticle && unfavoritedBy) {
         const count = 1;
         return this.returnArticle(slug, favorited, count, userId);
       }
