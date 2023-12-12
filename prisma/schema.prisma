@@ -37,6 +37,7 @@ model Article{
   createdAt DateTime @default(now())
   UpdatedAt DateTime @updatedAt
   favouritesCount Int? @default(0)
+  favoritedBy Int[] @default([])
   comments Comment[] 
 
   authorId Int
