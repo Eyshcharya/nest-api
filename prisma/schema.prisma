@@ -10,11 +10,6 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// User          : Profile      1:1
-// AuthorProfile : Article      1:N
-// AuthorProfile : Comment      1:N
-// Article : Comment            1:N
-// Article : Tags               N:M
 model User{
   id Int @id @default(autoincrement())
   userName String @unique
@@ -23,25 +18,25 @@ model User{
 
   bio String?
   image String?
-  following String[] 
+  favoriteArticles Int[] @default([])
+  followingUsers Int[] @default([])
 
-  article Article[]
+  articles Article[]
   comments Comment[]
   @@map("users")
 }
 
 model Article{
   id Int  @id @default(autoincrement())
-  slug String
-  title String
+  slug String? @unique
+  title String @unique
   description String
   body String
   tagList Tag[]
 
   createdAt DateTime @default(now())
   UpdatedAt DateTime @updatedAt
-  favourited Boolean
-  favouritesCount Int
+  favouritesCount Int? @default(0)
   comments Comment[] 
 
   authorId Int
@@ -51,7 +46,7 @@ model Article{
 
 model Tag{
   id Int  @id @default(autoincrement())
-  tag String
+  tag String @unique
   articles Article[]
   @@map("tags")
 }
